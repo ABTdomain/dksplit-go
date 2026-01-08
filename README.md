@@ -4,7 +4,7 @@ Go implementation of [DKSplit](https://github.com/ABTdomain/dksplit) - fast word
 
 Built with BiLSTM-CRF model and ONNX Runtime.
 
-## Performance
+## Performance: Intel(R) Core(TM) i9-14900K
 
 | Mode | QPS | Latency |
 |------|-----|---------|
