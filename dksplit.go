@@ -22,7 +22,6 @@ const (
 
 var charMap [128]int64
 
-// Singleton for ORT initialization
 var (
 	ortOnce sync.Once
 	ortErr  error
@@ -38,8 +37,10 @@ func init() {
 	}
 }
 
-func initORT() error {
+func initORT(modelDir string) error {
 	ortOnce.Do(func() {
+		libPath := filepath.Join(modelDir, "libonnxruntime.so")
+		ort.SetSharedLibraryPath(libPath)
 		ortErr = ort.InitializeEnvironment()
 	})
 	return ortErr
@@ -55,7 +56,7 @@ type Splitter struct {
 
 // New creates a new Splitter instance
 func New(modelDir string) (*Splitter, error) {
-	err := initORT()
+	err := initORT(modelDir)
 	if err != nil {
 		return nil, err
 	}
