@@ -102,6 +102,12 @@ Results on Intel Core i9-9900K:
 - Documentation: [dksplit.readthedocs.io](https://dksplit.readthedocs.io)
 - PyPI: [pypi.org/project/dksplit](https://pypi.org/project/dksplit)
 
+## Support
+
+If you find this useful:
+- ⭐ Star this repo
+- 🐛 Report issues on [GitHub Issues](https://github.com/ABTdomain/dksplit-go/issues)
+
 ## License
 
 MIT
