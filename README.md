@@ -1,6 +1,7 @@
 # DKSplit-go
 
-⚠️ Security Notice: The only official repositories for this project are ABTdomain/dksplit (Python) and ABTdomain/dksplit-go (Go). We are aware of fake clones that distribute malicious files. Do not download ZIP files from any other source claiming to be this project.
+
+⚠️ Security Notice: The only official repositories for this project are ABTdomain/dksplit (Python) and ABTdomain/dksplit-go (Go). We are aware of unauthorized clones that may distribute suspicious files. Please only download from our official repositories.
 
 Go implementation of [DKSplit](https://github.com/ABTdomain/dksplit) - fast word segmentation for text without spaces.
 
