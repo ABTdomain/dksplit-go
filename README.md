@@ -84,6 +84,11 @@ Run benchmark yourself:
 wget https://downloads.majestic.com/majestic_million.csv -O top-1m.csv
 go test -v -run TestRealWorldBenchmark
 ```
+## Accuracy Benchmark
+
+For detailed accuracy benchmarks on 1,000 real newly registered domains (DKSplit vs WordSegment vs WordNinja vs GPT-5.2), see the [Python version benchmark](https://github.com/ABTdomain/dksplit/tree/main/benchmark).
+
+The Go and Python versions use the same model and produce identical results.
 
 Results on Intel Core i9-9900K:
 - Dataset: 10,000 unique domains (length > 10, no hyphens)
