@@ -117,5 +117,4 @@ If you find this useful:
 - 🐛 Report issues on [GitHub Issues](https://github.com/ABTdomain/dksplit-go/issues)
 
 ## License
-
-MIT
+Apache 2.0
