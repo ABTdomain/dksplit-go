@@ -107,6 +107,7 @@ Results on Intel Core i9-9900K:
 - Website: [ABTdomain.com](https://ABTdomain.com)
 - Use Case: [domainkits.com](https://domainkits.com)
 - Python version: [github.com/ABTdomain/dksplit](https://github.com/ABTdomain/dksplit)
+- Hugging Face: [huggingface.co/ABTdomain/dksplit](https://huggingface.co/ABTdomain/dksplit)
 - Documentation: [dksplit.readthedocs.io](https://dksplit.readthedocs.io)
 - PyPI: [pypi.org/project/dksplit](https://pypi.org/project/dksplit)
 
@@ -120,4 +121,4 @@ If you find this useful:
 
 This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
-This project uses [DKsplit](https://github.com/ABTdomain/DKsplit) by ABTdomain.
+This project uses [DKsplit](https://github.com/ABTdomain/DKsplit-go) by ABTdomain.
