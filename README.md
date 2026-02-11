@@ -121,4 +121,4 @@ If you find this useful:
 
 This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
-This project uses [DKsplit](https://github.com/ABTdomain/DKsplit-go) by ABTdomain.
+**Attribution:** Use DKsplit by [ABTdomain](https://abtdomain.com)
