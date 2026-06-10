@@ -2,6 +2,7 @@ package dksplit
 
 import (
 	"encoding/binary"
+	"errors"
 	"math"
 	"os"
 	"path/filepath"
@@ -12,6 +13,9 @@ import (
 
 	ort "github.com/yalue/onnxruntime_go"
 )
+
+// errInvalidK is returned by SplitTopK when k < 1.
+var errInvalidK = errors.New("dksplit: k must be >= 1")
 
 const (
 	padIdx  = 0
@@ -118,6 +122,64 @@ func (s *Splitter) Split(text string) ([]string, error) {
 	preds := s.crfDecodeBatch(emissions, 1, seqLen)
 
 	return decodeToWords(text, preds[0]), nil
+}
+
+// SplitTopK segments a single string and returns the top-k segmentations,
+// best first. Distinct CRF tag paths can map to the same segmentation, so a
+// beam of 2k paths is decoded and deduplicated. Short inputs may yield fewer
+// than k candidates. The rank-1 candidate always equals Split.
+func (s *Splitter) SplitTopK(text string, k int) ([][]string, error) {
+	if k < 1 {
+		return nil, errInvalidK
+	}
+	if len(text) == 0 {
+		return [][]string{}, nil
+	}
+
+	text = strings.ToLower(text)
+	if len(text) > maxLen {
+		text = text[:maxLen]
+	}
+
+	seqLen := len(text)
+	charIds := textToIds(text)
+
+	emissions, err := s.runInference(charIds, 1, seqLen)
+	if err != nil {
+		return nil, err
+	}
+
+	// Each segmentation corresponds to exactly 2 tag paths (the first
+	// character's tag does not affect word boundaries), so a beam of 2k
+	// paths is always enough to yield k unique segmentations.
+	paths := s.crfDecodeTopK(emissions, seqLen, 2*k)
+
+	results := make([][]string, 0, k)
+	seen := make(map[string]struct{}, 2*k)
+	for _, path := range paths {
+		words := decodeToWords(text, path)
+		key := strings.Join(words, "\x00")
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		results = append(results, words)
+		if len(results) == k {
+			break
+		}
+	}
+
+	return results, nil
+}
+
+// Split3 returns the top-3 segmentations, best first.
+func (s *Splitter) Split3(text string) ([][]string, error) {
+	return s.SplitTopK(text, 3)
+}
+
+// Split5 returns the top-5 segmentations, best first.
+func (s *Splitter) Split5(text string) ([][]string, error) {
+	return s.SplitTopK(text, 5)
 }
 
 // SplitBatch segments multiple strings with length grouping for efficiency
@@ -296,6 +358,128 @@ func (s *Splitter) crfDecodeBatch(emissions []float32, batchSize, seqLen int) []
 	}
 
 	return results
+}
+
+// crfDecodeTopK performs k-best Viterbi decoding for a single sequence.
+// It keeps the k best-scoring paths per tag at each step, then returns all
+// finite-score paths sorted by total score, best first. At most k*numTags
+// paths are returned. emissions is laid out as (seqLen, numTags) for one
+// sequence (batch index 0).
+func (s *Splitter) crfDecodeTopK(emissions []float32, seqLen, k int) [][]int {
+	const negInf = float32(-math.MaxFloat32)
+
+	// score[j*k+r] = score of the r-th best path ending at tag j.
+	// newScore is a separate buffer so that within one time step every
+	// target tag reads the previous step's scores; updating score in
+	// place would let later tags see this step's freshly written values.
+	score := make([]float32, numTags*k)
+	newScore := make([]float32, numTags*k)
+	for i := range score {
+		score[i] = negInf
+	}
+	for j := 0; j < numTags; j++ {
+		score[j*k] = s.startTransitions[j] + emissions[j]
+	}
+
+	// history[t-1][j*k+r] = flat index (prevTag*k + prevRank) of the
+	// predecessor of the r-th best path ending at tag j at step t.
+	history := make([][]int, seqLen-1)
+
+	// Reusable candidate buffer: for each target tag j, the numTags*k
+	// candidate scores coming from every (prevTag, prevRank).
+	cand := make([]float32, numTags*k)
+	candIdx := make([]int, numTags*k)
+
+	for t := 1; t < seqLen; t++ {
+		hist := make([]int, numTags*k)
+		emitOffset := t * numTags
+
+		for j := 0; j < numTags; j++ {
+			// Build all numTags*k candidates for target tag j.
+			for i := 0; i < numTags; i++ {
+				trans := s.transitions[i*numTags+j]
+				emit := emissions[emitOffset+j]
+				for r := 0; r < k; r++ {
+					prev := score[i*k+r]
+					idx := i*k + r
+					if prev == negInf {
+						cand[idx] = negInf
+					} else {
+						// Accumulate in the same order as crfDecodeBatch,
+						// (prev + trans) + emit, so float32 rounding agrees
+						// and the rank-1 path always equals Split.
+						cand[idx] = prev + trans + emit
+					}
+					candIdx[idx] = idx
+				}
+			}
+
+			// Partial top-k selection of candidates by score, descending.
+			selectTopK(cand, candIdx, k)
+
+			for r := 0; r < k; r++ {
+				newScore[j*k+r] = cand[candIdx[r]]
+				hist[j*k+r] = candIdx[r]
+			}
+		}
+		score, newScore = newScore, score
+		history[t-1] = hist
+	}
+
+	// Final scores: add end transitions, then sort all numTags*k entries.
+	type scored struct {
+		flat  int
+		value float32
+	}
+	finals := make([]scored, 0, numTags*k)
+	for j := 0; j < numTags; j++ {
+		for r := 0; r < k; r++ {
+			v := score[j*k+r]
+			if v == negInf {
+				continue
+			}
+			finals = append(finals, scored{flat: j*k + r, value: v + s.endTransitions[j]})
+		}
+	}
+	sort.SliceStable(finals, func(a, b int) bool {
+		return finals[a].value > finals[b].value
+	})
+
+	paths := make([][]int, 0, len(finals))
+	for _, f := range finals {
+		j := f.flat / k
+		r := f.flat % k
+		path := make([]int, seqLen)
+		path[seqLen-1] = j
+		for t := seqLen - 1; t > 0; t-- {
+			flat := history[t-1][j*k+r]
+			j = flat / k
+			r = flat % k
+			path[t-1] = j
+		}
+		paths = append(paths, path)
+	}
+
+	return paths
+}
+
+// selectTopK reorders the first k entries of idx so that values[idx[0..k]]
+// are the k largest of values[idx[...]], in descending order. Uses a simple
+// partial selection sort; k and len(idx) are tiny (numTags*k, k <= ~10).
+func selectTopK(values []float32, idx []int, k int) {
+	n := len(idx)
+	if k > n {
+		k = n
+	}
+	for a := 0; a < k; a++ {
+		best := a
+		for b := a + 1; b < n; b++ {
+			if values[idx[b]] > values[idx[best]] {
+				best = b
+			}
+		}
+		idx[a], idx[best] = idx[best], idx[a]
+	}
 }
 
 func decodeToWords(text string, preds []int) []string {
