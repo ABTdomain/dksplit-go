@@ -161,9 +161,9 @@ Strict EM counts only exact matches against `truth`. Lenient EM also accepts the
 
 ## License
 
-This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
-
-**Attribution required.** Any public or production use of DKSplit must visibly credit **DKSplit from [ABTdomain.com](https://abtdomain.com)**, for example in your README, documentation, about page, or API response metadata. This requirement is in addition to the Apache-2.0 license terms.
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Attribution required: credit "DKSplit by [ABTdomain](https://abtdomain.com)"
+in your README, documentation, about page, or API response metadata.
 
 ## Acknowledgements
 
