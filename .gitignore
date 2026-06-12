@@ -1,2 +1,5 @@
+# Anything not meant for upload lives in local/
+local/
+
 onnxruntime-linux-x64-*/
 *.tgz

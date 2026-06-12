@@ -182,8 +182,24 @@ func (s *Splitter) Split5(text string) ([][]string, error) {
 	return s.SplitTopK(text, 5)
 }
 
-// SplitBatch segments multiple strings with length grouping for efficiency
+// SplitBatch segments multiple strings, grouping inputs by length for
+// efficiency. Inference runs row by row, so each result is guaranteed
+// identical to Split on that text. For maximum throughput at the cost of
+// that guarantee, see SplitBatchFast.
 func (s *Splitter) SplitBatch(texts []string, batchSize int) ([][]string, error) {
+	return s.splitBatch(texts, batchSize, true)
+}
+
+// SplitBatchFast segments multiple strings using whole-batch inference,
+// roughly 2-4x faster than SplitBatch. The INT8 model is dynamically
+// quantized, so activation scales are computed over the whole batch tensor,
+// and the result for a string can differ slightly from Split depending on
+// the other strings batched with it.
+func (s *Splitter) SplitBatchFast(texts []string, batchSize int) ([][]string, error) {
+	return s.splitBatch(texts, batchSize, false)
+}
+
+func (s *Splitter) splitBatch(texts []string, batchSize int, exact bool) ([][]string, error) {
 	if len(texts) == 0 {
 		return [][]string{}, nil
 	}
@@ -243,9 +259,25 @@ func (s *Splitter) SplitBatch(texts []string, batchSize int) ([][]string, error)
 				copy(charIds[i*length:], ids)
 			}
 
-			emissions, err := s.runInference(charIds, batchLen, length)
-			if err != nil {
-				return nil, err
+			var emissions []float32
+			if exact {
+				// Row by row keeps results identical to Split: the INT8
+				// model is dynamically quantized, so in a whole-batch run
+				// rows perturb each other's emissions.
+				emissions = make([]float32, 0, batchLen*length*numTags)
+				for i := 0; i < batchLen; i++ {
+					rowEmissions, err := s.runInference(charIds[i*length:(i+1)*length], 1, length)
+					if err != nil {
+						return nil, err
+					}
+					emissions = append(emissions, rowEmissions...)
+				}
+			} else {
+				batchEmissions, err := s.runInference(charIds, batchLen, length)
+				if err != nil {
+					return nil, err
+				}
+				emissions = batchEmissions
 			}
 
 			preds := s.crfDecodeBatch(emissions, batchLen, length)
