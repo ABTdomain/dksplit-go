@@ -66,12 +66,6 @@ understanding spaceless search queries.
   reranking with your own signals (brand lists, frequency data); an acceptable
   segmentation is in the top-3 candidates 98.5% of the time (top-5: 99.3%).
 
-## What's New in v1.0.1
-
-Bugfix: `SplitBatch` could differ from `Split` on rare inputs; results are
-now guaranteed identical. Use `SplitBatchFast` to keep the old ~2-4x faster
-behavior.
-
 ## Performance
 
 | CPU | Mode | QPS |
@@ -113,7 +107,7 @@ To explore domain data yourself, register at
 
 | Model | Strict EM | Lenient EM |
 |---|---|---|
-| **DKSplit v1.0.1** | **86.5%** | **91.5%** |
+| **DKSplit v1.0.0** | **86.5%** | **91.5%** |
 | WordSegment | 65.2% | 69.5% |
 | WordNinja | 51.0% | 54.0% |
 
@@ -129,7 +123,7 @@ Top-k coverage (an acceptable segmentation is present within the candidates):
 
 ### Comparison
 
-| Input | DKSplit v1.0.1 | WordSegment | WordNinja |
+| Input | DKSplit v1.0.0 | WordSegment | WordNinja |
 |---|---|---|---|
 | `chatgptprompts` | **chatgpt prompts** | chat gpt prompts | chat gp t prompts |
 | `spotifywrapped` | **spotify wrapped** | spot if y wrapped | spot if y wrapped |
