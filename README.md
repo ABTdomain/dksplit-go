@@ -169,7 +169,7 @@ failure-mode comparisons (dictionary segmenters, DeBERTa-V3, LLMs):
   alternatives.
 
 ## Links
-
+- Read more: [DKsplit on EuroHPC](https://ABtdomain.com/blog/tag/eurohpc)
 - Website: [domainkits.com](https://domainkits.com), [ABTdomain.com](https://ABTdomain.com)
 - Python version: [github.com/ABTdomain/dksplit](https://github.com/ABTdomain/dksplit)
 - PyPI: [pypi.org/project/dksplit](https://pypi.org/project/dksplit)
