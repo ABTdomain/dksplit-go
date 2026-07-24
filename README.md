@@ -66,6 +66,12 @@ understanding spaceless search queries.
   reranking with your own signals (brand lists, frequency data); an acceptable
   segmentation is in the top-3 candidates 98.5% of the time (top-5: 99.3%).
 
+## What's New in v1.0.2
+
+Bugfix: `SplitBatch` could differ from `Split` on rare inputs; results are
+now guaranteed identical. Use `SplitBatchFast` to keep the old whole-batch
+behavior (roughly 2-4x faster).
+
 ## Performance
 
 | CPU | Mode | QPS |
@@ -107,7 +113,7 @@ To explore domain data yourself, register at
 
 | Model | Strict EM | Lenient EM |
 |---|---|---|
-| **DKSplit v1.0.0** | **86.5%** | **91.5%** |
+| **DKSplit v1.0.2** | **86.5%** | **91.5%** |
 | WordSegment | 65.2% | 69.5% |
 | WordNinja | 51.0% | 54.0% |
 
@@ -123,7 +129,7 @@ Top-k coverage (an acceptable segmentation is present within the candidates):
 
 ### Comparison
 
-| Input | DKSplit v1.0.0 | WordSegment | WordNinja |
+| Input | DKSplit v1.0.2 | WordSegment | WordNinja |
 |---|---|---|---|
 | `chatgptprompts` | **chatgpt prompts** | chat gpt prompts | chat gp t prompts |
 | `spotifywrapped` | **spotify wrapped** | spot if y wrapped | spot if y wrapped |
@@ -163,17 +169,21 @@ failure-mode comparisons (dictionary segmenters, DeBERTa-V3, LLMs):
   letter-only runs: split off digits and separators (`-`, `.`, `_`) with
   simple rules first — those boundaries are a job for rules, not the model.
 - **Max length:** 64 characters.
-- **Script:** Latin script only.
+- **Script:** Latin script only. Non-Latin scripts (汉字, かな, 한글, العربية)
+  are not supported.
 - **Ambiguity:** some inputs are genuinely ambiguous. `Split` optimizes for
   the most common interpretation; use `SplitTopK` when you need the
   alternatives.
+- **Rare languages:** accuracy is highest on English and major European languages.
 
 ## Links
-- Read more: [DKsplit on EuroHPC](https://ABtdomain.com/blog/tag/eurohpc)
-- Website: [domainkits.com](https://domainkits.com), [ABTdomain.com](https://ABTdomain.com)
-- Python version: [github.com/ABTdomain/dksplit](https://github.com/ABTdomain/dksplit)
-- PyPI: [pypi.org/project/dksplit](https://pypi.org/project/dksplit)
-- Hugging Face: [huggingface.co/ABTdomain/dksplit](https://huggingface.co/ABTdomain/dksplit)
+
+- Read more about DKSplit: [DKSplit on EuroHPC](https://abtdomain.com/blog/tag/eurohpc)
+- Website: [domainkits.com](https://domainkits.com), [abtdomain.com](https://abtdomain.com)
+- Go reference: [pkg.go.dev/github.com/ABTdomain/dksplit-go](https://pkg.go.dev/github.com/ABTdomain/dksplit-go)
+- Python version: [github.com/ABTdomain/dksplit](https://github.com/ABTdomain/dksplit) ([PyPI](https://pypi.org/project/dksplit))
+- Hugging Face (LLM variant): [ABTdomain/dksplit-qwen-lora](https://huggingface.co/ABTdomain/dksplit-qwen-lora)
+- Issues: [GitHub Issues](https://github.com/ABTdomain/dksplit-go/issues)
 
 ## License
 
